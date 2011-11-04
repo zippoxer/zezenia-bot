@@ -1,0 +1,113 @@
+program New;
+var x, y, monsterBmp1, monsterBmp2, monsterBmp3, deadMonsterBmp1, deadMonsterBmp2: Integer;
+var ping: Integer;
+
+Procedure Drag(Fx, Fy, Tx, Ty: Integer);
+Begin
+  MoveMouseSmooth(Fx, Fy);
+  Wait(100 + Random(10));
+  HoldMouse(Fx, Fy, True);
+  MoveMouseSmooth(Tx, Ty);
+  ReleaseMouse(Tx, Ty, True);
+End;
+
+begin
+// Time to wait between actions that sends packets. The higher the safer.
+ping := 5000;
+
+monsterBmp1 := BitmapFromString(16, 8, 'beNo9UFlPgnAA/yRt' +
+  'bPng8iTNa4oigoAHkFyKCSbggQepeZar3CydzvlQqz5t//Xg62+/' +
+  'G/Z0OWokFp/u+I2uHPvG96z/O7c/R62jVd+31W2zum6Un2vCtMyN' +
+  'JeZBKJh53GLJ8b9k29a+pr0z/8OsvmgSwBdKCfBtIW8xpJZN1UnU' +
+  'yOMdllzUxF3POA3b+25ja1ZXqvAoMQM+17ulLY5qFQidzshonEei' +
+  'XDxUiAVVEh1K7FIV5wo/lVlQtUFhFQzhk9FiLCihMZVIcfFwNuiL' +
+  'u50+B4Rde4HcyGEGjek0YCaADxHwx1xOvwPCAz6AJL2uNOyhwzCX' +
+  'CGtU2haYmVKayBxYBGq0Cjjw5JEIGYJzkQBIcUMXSe+VgiFg0Zte' +
+  '2XX1w8DctbWNXlnfy691aVktgaXglhISQWG37xLK3vibRQK8cbLN' +
+  'n9ng/M+ho+1btXdDWaniRGaVDJL+A9WNhDg=');
+
+monsterBmp2 := BitmapFromString(16, 12, 'beNo9kVtz0kAYhn+A3vgHO' +
+    'r1WRwWaAIEcNiGn3UAg5zQQElKBQppCrFD0QtvpjIc6gzP6g/0Ex' +
+    '5nnYmf2fXf3e1ZDCl0ZqSiSuVBsz7vKJuh/Hnv3afCQhR+HTul2F' +
+    '6aW6gh2I5mPVdSpvXZ4JhDbww4HW7vIukv9I7vIXh/yGZaGHT4UW' +
+    'Q+1c9csXDPVOw7XjCR2ooszQzkyweJY4c8l1hMYh29mhlpG7q/t9' +
+    'ddldmkRo1HD9arRAGr/IfUDdJU0zgp/sN8U+5t8f7NcB5bNNjyeg' +
+    'VfFCh9JnI9aLt+02LrJUORQLPz+z/fF3fLi9259GwdDmZsS+Z3b2' +
+    '4aDlUMue+oESyOZ9wXGbFGkXs2d7o/VvIyDx3Kxib1UF1c2uU/8L' +
+    '2+jT4kHrcImM0OGis3WMV1NSWcb+zGWr7z+zNQTDR3z36ajh+wc/' +
+    'NweKhmRYF6dqihURaIrMGOPoTyhNVaEv/nUf5zHwPfZCCpwC/gE+' +
+    'Rr15uXpybOnTwZtGkzGMj815MLC26D/IbKPrF0DfjBRUYja/RbNv' +
+    'Xr+4vQE9P4L2/hqgJemBpMeSVTBR4zDNQLUghgses2zVEOgJR/g0' +
+    'utdO0ZukYWpQxhOhheCUgAkX2AJvjL9A8oQuHo=');
+
+monsterBmp3 := BitmapFromString(16, 6, 'beNpLi0vydA53tIpwso50to' +
+  'lwtA61twyyMfezNPUyNwIy4tzs03zcgGSIvVWAlZmPhXGGr1u8u2' +
+  'OYvSWQ7WFq6GVu6G1u5G0BRMaB1uaRTjbxbg5AWV9LE6AJXmaGqd' +
+  '4uQBFPM0NjNSVLbY1gB+vsYN/cUP/8iKDMIJ94D2egpQmezpmBXo' +
+  'nersH2lokeTnFuDjY6mtLCwtqK8nFerj356f0l2ZMqCpqyklL9PY' +
+  'NsLLKDfFoyEiriw+PcneJc7YHq7fW05MVENOVlAx2ty+IjOvIzZt' +
+  'eXt+amRXs42+tpp/q5d+WktGYm5Ib4RTvbAt0DdK2FpqqhqqKJpq' +
+  'q1vk5qoE9fcXZ1cqybhYmSlHiQvWVzSnR3dlIzABP9VH0=');
+
+deadMonsterBmp1 := BitmapFromString(8, 18, 'beNo9kFlPwlAQhdkKrSKiLF' +
+  'JraymgFC4FCi1QtooItLWoLAJRCUvQxBqN0TdjjCY+6Kt/2KsmTu' +
+  'bpOyczJ8dkMo6VXjWfj+2wFNEuiQ+jk+fJ4Omit9DqTSHF4BvLqE' +
+  'OMhietvduOetc7nKv7bUkQdkMhfINj6CKI6pIwU2pwT2VJEdNSfD' +
+  'dKEn63CwSpbqVwXq/0K3m9kK2lQYTAMTuyHfBp+Uy3nINQFfl/Tv' +
+  'o9jWxSy/HNbLLOc5VEjMEDqB3B19fKgFXFdJWLpcNBCL2rLsRmdS' +
+  '1hMF5LSOXYCOX3QieEZrPZZrWgCAKTyFycjzBhIuD78dtMv6Pm+H' +
+  'ZBGMjFYa0EVSeK/vGDDAd7uO/rb9Nhuyhs+TyYw26zWuM0KaeA0d' +
+  'U+jdlNR9OlLMwAD7qdyyBEL46Vr0fj43r6MhmMaqUdcpML0RJgu3' +
+  'vly44215uwt3omQfq944bckwvlJIgz2yxNRikCvnBi6Ot0aHSUIm' +
+  'DXXCuYw2GxWP7yvF+NX+ZniyOlJQlskILSD/0Gq+dQGg==');
+
+deadMonsterBmp2 := BitmapFromString(13, 10, 'beNolUOtPgnAU/dTzQ+tDm' +
+    'XPZtNSyl/MxsJVpKWCAhCIihfQTEdLC0Bpu+YhaZaXrb+5XbXd3O' +
+    '7tn555zkHA0sJ7YC+KxEHuEFJMH5ZNDJXt6x1GPEvdcE0cN8HWrw' +
+    'KHiUZVMPwiMDQSTowFx8g9flF/OxNS+Ow04V0SqwzMDILxrsnVR0' +
+    'BlcozO3bPa+xDwpF+OWNjH1saHe84xdLY+uwdio96vlVpHWc3iNT' +
+    'KtUxrrkPw110qrD6xAIo2v580b5MtQeEIwCBfWhzzMkojLEsCa96' +
+    'rKtiHBDzkcDvGkVS8xrNAY5yJZv0+0iD2ItPteVOEtkP25qUOddr' +
+    '9igZHIUjJCO7HucjvnZmWhgQ8ocN86JJnvWB+VBVexV+K6Yb7JZG' +
+    'U+RaCTiX/c6Hbvetfh2AEIZT7ZLuXaJMXkadgU/yliykECxaAgN+' +
+    'gOrruXFhW2Pmz1Clb9QdRrTcxg0D+vNHyIkGk6Gdnwu59z01NrKU' +
+    'vYH1ot97w==');
+
+ActivateClient();
+
+while True do
+begin
+  if FindBitmapTolerance(deadMonsterBmp1, x, y, 50) or
+    FindBitmapTolerance(deadMonsterBmp2, x, y, 50) then
+  begin
+    Drag(x, y, 908, 469);
+    Wait(ping);
+    MoveMouseSmooth(908, 469);
+    ClickMouse(908, 469, False);
+    Wait(ping);
+    if FindColorCircle(x, y, 42748, 1794, 616, 30) or
+      FindColorCircle(x, y, 42748, 1835, 616, 30) then
+    begin
+      Drag(x, y, 1795, 526);
+      Wait(100);
+      KeyDown(VK_RETURN);
+      Wait(ping);
+    end;
+    while FindColorCircle(x, y, 12632256, 1917, 579, 10) do
+    begin
+      MoveMouseSmooth(1917, 579);
+      ClickMouse(1917, 579, True);
+      Wait(500);
+    end;
+    Wait(ping);
+  end
+  else if FindBitmapTolerance(monsterBmp1, x, y, 50) or
+    FindBitmapTolerance(monsterBmp2, x, y, 50) or
+    FindBitmapTolerance(monsterBmp3, x, y, 50) then
+  begin
+    MoveMouseSmooth(x, y);
+    ClickMouse(x, y, False);
+    Wait(ping);
+  end;
+end;
+end.
