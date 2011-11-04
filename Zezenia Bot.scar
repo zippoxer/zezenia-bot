@@ -1,0 +1,593 @@
+program New;
+
+type
+  Void = function: Boolean;
+
+var i, x, y, tx, ty, bp, bp2, item, item2: Integer;
+  monsterBmps, corpseBmps: array[0..10] of Integer;
+  offsetX, offsetY: Integer;
+  minimizeCloseButtonsBmp, targetCircleBmp: Integer;
+  currentPlace, lastPlaceChange: Integer;
+  lootBp, foodBp: Integer;
+
+  firstItemX, firstBpY, closeBtnX: Integer;
+
+const
+  // Your screen resolution.
+  {$DEFINE 1920x1080}
+
+  // What to attack. Choose between creep, swarm and bug.
+  target = 'swarm';
+
+  // Time to wait for the GUI to response. Must be higher than 1000 / minimum FPS.
+  gui = 100;
+
+  // Time to wait for the server to respond. The higher, the safer.
+  ping = 3000;
+
+  // How long to wait until giving up for a target.
+  attackTimeout = 60000;
+
+  // Not tested enough.
+  smartTargeting = True;
+
+  // If set to True, eating is enabled and the first backpack will be considered
+  // as a food backpack.
+  eat = False;
+
+  // How much bacpacks are opened after the food backpack (if there is) and are
+  // used for carrying gold?
+  carryBps = 3;
+
+  // Use the first item in the food backpack every...
+  eatFrequency = 30000;
+
+  // VK_F1, VK_F2, etc.
+  spell = VK_F1;
+
+  // Press the spell hotkey every...
+  spellFrequency = 0;
+
+  // Enable or disable place changing.
+  changePlaces = False;
+
+  // Assuming you are in place 1, where to click (on the minimap) to get to place 2?
+  toPlace2X = 1880;
+  toPlace2Y = 62;
+
+  // Assuming you are in place 2, where to click (on the minimap) to get to place 1?
+  toPlace1X = 1808;
+  toPlace1Y = 159;
+
+  // Stay in every place at least...
+  placeChangeFrequency = 10000;
+
+  // How long it takes to get to switch place.
+  placeChangeTime = 20000;
+
+  goldPieceColor = 42748;
+  eggColor = 13487565;
+
+  {$IFDEF 1920x1080}
+  SXS = 671;
+  SYS = 294;
+  SXE = 1150;
+  SYE = 645;
+  {$ENDIF}
+
+  {$IFDEF 1280x1024}
+  SXS = 351;
+  SYS = 266;
+  SXE = 830;
+  SYE = 617;
+  {$ENDIF}
+
+  {$IFDEF 1280x768}
+  SXS = 351;
+  SYS = 138;
+  SXE = 830;
+  SYE = 489;
+  {$ENDIF}
+
+  {$IFDEF 1280x720}
+  SXS = 351;
+  SYS = 114;
+  SXE = 830;
+  SYE = 465;
+  {$ENDIF}
+
+  {$IFDEF 1024x768}
+  SXS = 223;
+  SYS = 138;
+  SXE = 702;
+  SYE = 489;
+  {$ENDIF}
+
+  {$IFDEF 800x600}
+  SXS = 111;
+  SYS = 54;
+  SXE = 590;
+  SYE = 405;
+  {$ENDIF}
+
+  TS = 32;
+
+  STX = 7;
+  STY = 5;
+
+  itemStep = 40;
+  bpStep = 88;
+  closeBtnOffsetY = -37;
+
+procedure LearnGui;
+begin
+  FindBitmap(minimizeCloseButtonsBmp, x, y);
+  firstItemX := x - 104;
+  firstBpY := y + 41;
+  closeBtnX := x + 19;
+
+  if eat then
+    foodBp := 1;
+  lootBp := foodBp + carryBps + 1;
+end;
+
+procedure LoadCreep;
+begin
+  offsetX := 5;
+  offsetY := 15;
+
+  // up
+  monsterBmps[0] := BitmapFromString(7, 4, 'beNpzcygM9e1Mj51WkV8U6gt' +
+    'E8W4ODAwMEBEgCURFYVBBIIksoq0gCxQEkh6mBhAEYccDAJmkGJM' +
+    '=');
+
+  // down
+  monsterBmps[1] := BitmapFromString(4, 6, 'beNozNWBgYIhztS8M9XU3AbG' +
+    'BDCCKc7MHsoEiHqYg1JkWAyTj3ByAJFAcSBaF+ca7OUyryIco8AA' +
+    'AUQkRYw==');
+
+  // right
+  monsterBmps[2] := BitmapFromString(9, 3, 'beNpzd1zc0cAABjOqCj3NDIH' +
+    'koo56ICPB3XEmWASCgFwICUTF4X5Adkm4P4TbkxEH5HZnxAFRAgA' +
+    'FvRnd');
+
+  // left
+  monsterBmps[3] := BitmapFromString(8, 3, 'beNrLjC+N8O/NjE/0cNRRlAM' +
+    'ySiL8gYyezHgge1Z1EZD0MjMEMoAIqAbC6AXLAsUhDKB4DwDhmhw' +
+    'h');
+
+  corpseBmps[0] := BitmapFromString(4, 3, 'beNpLjGBAApFONtmBnkAEZDQ' +
+    'lRkARAG7QCKU=');
+end;
+
+procedure LoadSwarm;
+begin
+  offsetX := 10;
+  offsetY := 10;
+
+  // up
+  monsterBmps[0] := BitmapFromString(5, 5, 'beNqLiDA2NnZ3d6+urgaSDGB' +
+    'gjAqA4kDSAwyAjKysLCCZnZ0N4QI1AsmampoIAKBXE3g=');
+
+  // down
+  monsterBmps[1] := BitmapFromString(5, 4, 'beNozMjI0NKyoqDAyMgKSYWF' +
+    'hQEZGRgaEdHNzM0ICEC5QvLKyEqQSAA/TEWU=');
+
+  // right
+  monsterBmps[2] := BitmapFromString(5, 6, 'beNozNmYAA3d3dyAZERERHh5' +
+    'ujASAgtXV1VlZWUB2dnY2kAuXAooDuVVVVRBZoF4gF6jdHQyMAU4' +
+    'bFKE=');
+
+  // left
+  monsterBmps[3] := BitmapFromString(5, 6, 'beNpjYAgNDTU0NDSCAQYGhoq' +
+    'KioyMDCAbSAK5cKnKykpk2bCwMCAXSLqBAUQ93BAGALYrFMg=');
+
+  corpseBmps[0] := BitmapFromString(5, 5, 'beNozMGBgYEhJSSkpKWGAASD' +
+    'X2dkZyICQBmAAZJSWlsIFgSA1NRXCBeoFqQAA2ooNAw==');
+end;
+
+procedure LoadBug;
+begin
+  // up
+  monsterBmps[0] := BitmapFromString(7, 7, 'beNrzCL26g6enUNjblmtFPwe' +
+    'Q7C0SXjGB49oOHiDbDAyEhIR8bLmu7+QBCgLZ5mAgBAZAQSACykI' +
+    'ENTQ0gOwHp7x1dE1XTuAAsiHkjV08KydyVDRPAoozIAEg18LRR01' +
+    'Nt6Jl0vytB4Lii9TUde0AlB0p5g==');
+
+  // down
+  monsterBmps[1] := BitmapFromString(6, 3, 'beNpT0w2IK+hZuDY2q0ZZUWb' +
+    'u5n2qajpzN+81NtA2t/e0NDHon7kELLLPwsG7Z9G6eVv2xWXXqgI' +
+    'AOeYV1g==');
+
+  // right
+  monsterBmps[3] := BitmapFromString(9, 3, 'beNpjYHDwiojNqWVgYJi4fDM' +
+    'DKqhqm6qmrqerqQKSLRWBI4iUrp6ZsLDwnX08cASSAgDB2xUX');
+
+  // left
+  monsterBmps[2] := BitmapFromString(8, 4, 'beNpjYACCiaUicATkqqnrVbV' +
+    'NhYjf2csDR7p6ZkDxNZM5gGyglK8dl7CwMJBcO5kDKAVUf2QlF5B' +
+    'rAQNANgMAiXQcKA==');
+
+  corpseBmps[0] := BitmapFromString(12, 5, 'beNoTEWKAAUFBQRMTE' +
+    'xVVbUEkAJEy0tNqn7N8xtrtUekVPDw8QDXqqopFtd0Q5B2aYu3s3' +
+    'z5nRVR6pZK8NFAZUAEQARmmtu5FdT36OhpABUBlQHOAIubGel1T5' +
+    'kHUFNf1ALlAXV6hyUBk7RxgZufpF507c92OqIxKiBpb1yCgSGFtt' +
+    '56WOlCNGADktjB+');
+end;
+
+procedure Load;
+begin
+  // Use bitmap index 0.
+  BitmapFromString(0, 0, '');
+
+  case target of
+    'creep': LoadCreep;
+    'swarm': LoadSwarm;
+    'bug': LoadBug;
+  end;
+
+  minimizeCloseButtonsBmp := BitmapFromString(26, 12, 'beNqNkmsOw' +
+    'iAQhC/BL2OVtgRXAqSNnsQT92gODCAxJrLZEB5fh9mlSr0Gwsl6t' +
+    '/NrLJ67Z27e7FE2t2AMTmOMTiuloObEjJBgoujN2yAXjjl1yJs4A' +
+    'nNbz/T2l0yMW7DEdSmjTafR8nZkVjsVtUwex9GTWDYSTL2Cd13gv' +
+    '1tOYOw63e21J6FAkpNGZkbHvP8V/BYMjDmZG4n9xkOQO+FTqcH8l' +
+    '1qyUV9hbiTNVGYKt6mR9L9H+9gE3fjUm9sYXPHmne3JVmDpYSXBY' +
+    'I735YhkEyhYKjWlb2Sg0JMUbJUmRq448rL0786sla4jJP2nH4ZPm' +
+    'ZpQimV7q7d5hBwJ/L1izv+5N8teyK4=');
+
+  targetCircleBmp := BitmapFromString(3, 3, 'beNoT52+TFl4iI7xBSnCZEO9' +
+    'qKcEt8iJrpIU3ygivBQBgawdy');
+
+  LearnGui;
+end;
+
+function WaitFunc(func: Void; positive: Boolean; timeout: Integer): Boolean;
+var start: Integer;
+begin
+  start := GetSystemTime;
+  Result := True;
+  while func() <> positive do
+  begin
+    if GetSystemTime - start >= timeout then
+    begin
+      Result := False;
+      break;
+    end;
+  end;
+end;
+
+function WaitTrue(func: Void; timeout: Integer): Boolean;
+begin
+  Result := WaitFunc(func, True, timeout);
+end;
+
+function WaitFalse(func: Void; timeout: Integer): Boolean;
+begin
+  Result := WaitFunc(func, False, timeout);
+end;
+
+procedure SafeMove(x, y: Integer);
+begin
+  MoveWindMouseEx(x, y, 20, 20, 40);
+end;
+
+procedure SafeClick(x, y: Integer; left: Boolean);
+begin
+  SafeMove(x, y);
+  ClickMouse(x, y, left);
+end;
+
+procedure Drag(fx, fy, tx, ty: Integer);
+begin
+  SafeMove(fx, fy);
+  Wait(gui);
+  HoldMouse(fx, fy, True);
+  SafeMove(tx, ty);
+  ReleaseMouse(tx, ty, True);
+end;
+
+procedure ToTileLoc(x, y: Integer; out tx, ty: Integer);
+begin
+  tx := Floor((x - SXS) / TS);
+  ty := Floor((y - SYS) / TS);
+end;
+
+procedure ToScreenLoc(tx, ty: Integer; out x, y: Integer);
+begin
+  x := SXS + tx * TS;
+  y := SYS + ty * TS;
+end;
+
+procedure ToScreenLocCenter(tx, ty: Integer; out x, y: Integer);
+begin
+  ToScreenLoc(tx, ty, x, y);
+  x := x + Floor(TS / 2);
+  y := y + Floor(TS / 2);
+end;
+
+function BpY(bp: Integer): Integer;
+begin
+  Result := firstBpY + bpStep * (bp - 1);
+end;
+
+function ItemX(bp: Integer): Integer;
+begin
+  Result := firstItemX + itemStep * (bp - 1);
+end;
+
+function CloseBtnY(bp: Integer): Integer;
+begin
+  Result := BpY(bp) + closeBtnOffsetY;
+end;
+
+function IsOpen(bp: Integer): Boolean;
+var x, y: Integer;
+begin
+  Result := FindColorCircleTolerance(x, y, 12632256, closeBtnX, CloseBtnY(bp), 10, 90);
+end;
+
+function FindItemAt(color, bp, item: Integer; out resultBp, resultItem: Integer): Boolean;
+var bpUnspecified, itemUnspecified, found: Boolean;
+var x, y: Integer;
+begin
+  if bp = 0 then
+  begin
+    bpUnspecified := True;
+    bp := 1;
+  end;
+  if item = 0 then
+  begin
+    itemUnspecified := True;
+    item := 1;
+  end;
+  while IsOpen(bp) do
+  begin
+    while item <= 3 do
+    begin
+      found := FindColorCircleTolerance(x, y, color, ItemX(item), BpY(bp), 20, 10);
+      if found then
+      begin
+        resultBp := bp;
+        resultItem := item;
+        break;
+      end;
+      if itemUnspecified then
+        item := item + 1
+      else
+        break
+    end;
+    if bpUnspecified then
+      bp := bp + 1
+    else
+      break
+  end;
+
+  Result := found;
+end;
+
+function FindItem(color: Integer; out resultBp, resultItem: Integer): Boolean;
+begin
+  Result := FindItemAt(color, 0, 0, resultBp, resultItem);
+end;
+
+procedure MoveItem(bp, item, x, y: Integer);
+begin
+  Drag(ItemX(item), BpY(bp), x, y);
+  Wait(gui);
+  KeyDown(VK_RETURN);
+  KeyUp(VK_RETURN);
+end;
+
+procedure MoveItemToSlot(fromBp, fromItem, toBp, toItem: Integer);
+begin
+  MoveItem(fromBp, fromItem, ItemX(toItem), BpY(toBp));
+end;
+
+procedure UseItem(bp, item: Integer);
+begin
+  SafeClick(ItemX(item), BpY(bp), False);
+end;
+
+function IsCurrentBpOpen: Boolean;
+begin
+  Result := IsOpen(bp);
+end;
+
+procedure Close(bp: Integer);
+var x, y: Integer;
+begin
+  x := closeBtnX;
+  y := CloseBtnY(bp);
+  while IsOpen(bp) do
+  begin
+    MoveMouseSmooth(x, y);
+    ClickMouse(x, y, True);
+    Wait(500);
+  end;
+end;
+
+function LocateTarget(out x, y: Integer): Boolean;
+var start: Integer;
+begin
+  start := GetSystemTime;
+  Result := True;
+  while not FindBitmapToleranceIn(targetCircleBmp, x, y, SXS, SYS, SXE, SYE, 20) do
+  begin
+    if GetSystemTime - start >= 1500 then
+    begin
+      Result := False;
+      break;
+    end;
+  end;
+end;
+
+function HasTarget: Boolean;
+var x, y: Integer;
+begin
+  Result := LocateTarget(x, y);
+end;
+
+function IsTooFar(tx, ty: Integer): Boolean;
+begin
+  Result := (Abs(tx - STX) > 1) or (Abs(ty - STY) > 1);
+end;
+
+function IsOnSelf(tx, ty: Integer): Boolean;
+begin
+  Result := (tx = STX) and (ty = STY);
+end;
+
+procedure ClickTile(tx, ty: Integer; left: Boolean);
+var x, y: Integer;
+begin
+  ToScreenLocCenter(tx, ty, x, y);
+  SafeClick(x, y, left);
+end;
+
+procedure MoveTile(ftx, fty, ttx, tty: Integer);
+var fx, fy, tx, ty: Integer;
+begin
+  ToScreenLocCenter(ftx, fty, fx, fy);
+  ToScreenLocCenter(ttx, tty, tx, ty);
+  Drag(fx, fy, tx, ty);
+end;
+
+procedure MoveTileToSlot(ftx, fty, tbp, titem: Integer);
+var fx, fy, tx, ty: Integer;
+begin
+  ToScreenLocCenter(ftx, fty, fx, fy);
+  tx := ItemX(titem);
+  ty := BpY(tbp);
+  Drag(fx, fy, tx, ty);
+end;
+
+function FindMonster(out tx, ty: Integer): Boolean;
+var points: TPointArray;
+var i, j, _tx, _ty: Integer;
+begin
+  for i := 0 to Length(monsterBmps)-1 do
+  begin
+    if monsterBmps[i] = 0 then
+      break;
+    if FindBitmapsTolerance(monsterBmps[i], points, SXS, SYS, SXE, SYE, 20) then
+    begin
+      for j := 0 to Length(points)-1 do
+      begin
+        ToTileLoc(points[j].X + offsetX, points[j].Y + offsetY, _tx, _ty);
+        if not IsTooFar(_tx, _ty) then
+        begin
+          tx := _tx;
+          ty := _ty;
+          Result := True;
+          break;
+        end;
+      end;
+    end;
+    if Result then
+      break;
+  end;
+end;
+
+function FindCorpse(out tx, ty: Integer): Boolean;
+var points: TPointArray;
+var i, j, _tx, _ty: Integer;
+begin
+  for i := 0 to Length(corpseBmps)-1 do
+  begin
+    if corpseBmps[i] = 0 then
+      break;
+    if FindBitmapsTolerance(corpseBmps[i], points, SXS, SYS, SXE, SYE, 20) then
+    begin
+      for j := 0 to Length(points)-1 do
+      begin
+        ToTileLoc(points[j].X, points[j].Y, _tx, _ty);
+        if not IsOnSelf(_tx, _ty) and not IsTooFar(_tx, _ty) then
+        begin
+          tx := _tx;
+          ty := _ty;
+          Result := True;
+          break;
+        end;
+      end;
+    end;
+    if Result then
+      break;
+  end;
+end;
+
+procedure SpellTimeout;
+begin
+  KeyDown(spell);
+  KeyUp(spell);
+  SetTimeout(spellFrequency, 'SpellTimeout');
+end;
+
+begin
+  ActivateClient;
+  Load;
+
+  if spellFrequency <> 0 then
+  begin
+    SetTimeout(spellFrequency, 'SpellTimeout');
+  end;
+
+  lastPlaceChange := GetSystemTime;
+  currentPlace := 1;
+  while True do
+  begin
+    if FindMonster(tx, ty) then
+    begin
+      // Attack.
+      ClickTile(tx, ty, False);
+      if smartTargeting then
+      begin
+        if WaitTrue(@HasTarget, ping) then
+          WaitFalse(@HasTarget, attackTimeout);
+      end
+      else
+        Wait(attackTimeout);
+    end
+    else if FindCorpse(tx, ty) then
+    begin
+      MoveTile(tx, ty, STX, STY);
+      Wait(ping + gui);
+      Close(lootBp);
+      ClickTile(STX, STY, False);
+      bp := lootBp;
+      WaitTrue(@IsCurrentBpOpen, ping);
+      i := foodBp + 1;
+      while (i < lootBp) and FindItemAt(goldPieceColor, lootBp, 0, bp, item) do
+      begin
+        if FindItemAt(goldPieceColor, i, 0, bp2, item2) then
+          MoveItemToSlot(bp, item, bp2, item2)
+        else
+          MoveItemToSlot(bp, item, i, 1);
+        Wait(500);
+        i := i + 1;
+      end;
+      i := 0;
+      while (i < 5) and FindItemAt(eggColor, lootBp, 0, bp, item) do
+      begin
+        UseItem(bp, item);
+        Wait(RandomRange(50, 200));
+        i := i + 1;
+      end;
+      Close(lootBp);
+    end
+    else if changePlaces and (GetSystemTime - lastPlaceChange >= placeChangeFrequency) then
+    begin
+      if currentPlace = 1 then
+      begin
+        ClickMouse(toPlace2X, toPlace2Y, True);
+        currentPlace := 2;
+      end
+      else
+      begin
+        ClickMouse(toPlace1X, toPlace1Y, True);
+        currentPlace := 1;
+      end;
+      Wait(placeChangeTime);
+      lastPlaceChange := GetSystemTime;
+    end;
+  end;
+end.
