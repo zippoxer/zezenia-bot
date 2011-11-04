@@ -1,23 +1,23 @@
-program New;
+program ZezeniaBot;
 
 type
   Void = function: Boolean;
 
-var i, x, y, tx, ty, bp, bp2, item, item2: Integer;
+var
+  i, x, y, tx, ty, bp, bp2, item, item2: Integer;
   monsterBmps, corpseBmps: array[0..10] of Integer;
-  offsetX, offsetY: Integer;
-  minimizeCloseButtonsBmp, targetCircleBmp: Integer;
+  monsterOffset, corpseOffset: TPoint;
+  gameScreenDTM, minimizeCloseButtonsBmp, targetCircleBmp: Integer;
   currentPlace, lastPlaceChange: Integer;
-  lootBp, foodBp: Integer;
 
+  lootBp, foodBp: Integer;
+  SXS, SYS, SXE, SYE: Integer;
+  CW, CH, CXE, CYE: Integer;
   firstItemX, firstBpY, closeBtnX: Integer;
 
 const
-  // Your screen resolution.
-  {$DEFINE 1920x1080}
-
   // What to attack. Choose between creep, swarm and bug.
-  target = 'swarm';
+  target = 'creep';
 
   // Time to wait for the GUI to response. Must be higher than 1000 / minimum FPS.
   gui = 100;
@@ -37,7 +37,7 @@ const
 
   // How much bacpacks are opened after the food backpack (if there is) and are
   // used for carrying gold?
-  carryBps = 3;
+  carryBps = 1;
 
   // Use the first item in the food backpack every...
   eatFrequency = 30000;
@@ -68,47 +68,8 @@ const
   goldPieceColor = 42748;
   eggColor = 13487565;
 
-  {$IFDEF 1920x1080}
-  SXS = 671;
-  SYS = 294;
-  SXE = 1150;
-  SYE = 645;
-  {$ENDIF}
-
-  {$IFDEF 1280x1024}
-  SXS = 351;
-  SYS = 266;
-  SXE = 830;
-  SYE = 617;
-  {$ENDIF}
-
-  {$IFDEF 1280x768}
-  SXS = 351;
-  SYS = 138;
-  SXE = 830;
-  SYE = 489;
-  {$ENDIF}
-
-  {$IFDEF 1280x720}
-  SXS = 351;
-  SYS = 114;
-  SXE = 830;
-  SYE = 465;
-  {$ENDIF}
-
-  {$IFDEF 1024x768}
-  SXS = 223;
-  SYS = 138;
-  SXE = 702;
-  SYE = 489;
-  {$ENDIF}
-
-  {$IFDEF 800x600}
-  SXS = 111;
-  SYS = 54;
-  SXE = 590;
-  SYE = 405;
-  {$ENDIF}
+  SW = 480;
+  SH = 352;
 
   TS = 32;
 
@@ -120,7 +81,18 @@ const
   closeBtnOffsetY = -37;
 
 procedure LearnGui;
+var x, y: Integer;
 begin
+  GetClientDimensions(CW, CH);
+  CXE := CW - 1;
+  CYE := CH - 1;
+
+  FindDTM(gameScreenDTM, x, y, 0, 0, CXE, CYE);
+  SXS := x + 1;
+  SYS := y + 1;
+  SXE := SXS + SW;
+  SYE := SYS + SH;
+
   FindBitmap(minimizeCloseButtonsBmp, x, y);
   firstItemX := x - 104;
   firstBpY := y + 41;
@@ -133,8 +105,9 @@ end;
 
 procedure LoadCreep;
 begin
-  offsetX := 5;
-  offsetY := 15;
+  monsterOffset.X := 5;
+  monsterOffset.Y := 15;
+  corpseOffset := monsterOffset;
 
   // up
   monsterBmps[0] := BitmapFromString(7, 4, 'beNpzcygM9e1Mj51WkV8U6gt' +
@@ -162,8 +135,8 @@ end;
 
 procedure LoadSwarm;
 begin
-  offsetX := 10;
-  offsetY := 10;
+  monsterOffset.X := 10;
+  monsterOffset.Y := 10;
 
   // up
   monsterBmps[0] := BitmapFromString(5, 5, 'beNqLiDA2NnZ3d6+urgaSDGB' +
@@ -226,6 +199,10 @@ begin
     'bug': LoadBug;
   end;
 
+  gameScreenDTM := DTMFromString('78DA639CC7C4C0A0CAC8800C444444C0344C9' +
+    '4B19E85B01A90396D4C84CD415313141484A9E606237E35EECC04' +
+    'CD0100ACA70973');
+
   minimizeCloseButtonsBmp := BitmapFromString(26, 12, 'beNqNkmsOw' +
     'iAQhC/BL2OVtgRXAqSNnsQT92gODCAxJrLZEB5fh9mlSr0Gwsl6t' +
     '/NrLJ67Z27e7FE2t2AMTmOMTiuloObEjJBgoujN2yAXjjl1yJs4A' +
@@ -268,7 +245,7 @@ end;
 
 procedure SafeMove(x, y: Integer);
 begin
-  MoveWindMouseEx(x, y, 20, 20, 40);
+  MoveWindMouseEx(x, y, 0, 0, 40);
 end;
 
 procedure SafeClick(x, y: Integer; left: Boolean);
@@ -298,11 +275,13 @@ begin
   y := SYS + ty * TS;
 end;
 
-procedure ToScreenLocCenter(tx, ty: Integer; out x, y: Integer);
+procedure ToScreenLocRnd(tx, ty: Integer; out x, y: Integer);
+var p: TPoint;
 begin
   ToScreenLoc(tx, ty, x, y);
-  x := x + Floor(TS / 2);
-  y := y + Floor(TS / 2);
+  p := RndBoxPointG(Box(x, y, x + TS, y + TS), 1.5);
+  x := p.X;
+  y := p.Y;
 end;
 
 function BpY(bp: Integer): Integer;
@@ -326,9 +305,28 @@ begin
   Result := FindColorCircleTolerance(x, y, 12632256, closeBtnX, CloseBtnY(bp), 10, 90);
 end;
 
-function FindItemAt(color, bp, item: Integer; out resultBp, resultItem: Integer): Boolean;
-var bpUnspecified, itemUnspecified, found: Boolean;
+function IsCurrentBpOpen: Boolean;
+begin
+  Result := IsOpen(bp);
+end;
+
+procedure Close(bp: Integer);
 var x, y: Integer;
+begin
+  x := closeBtnX;
+  y := CloseBtnY(bp);
+  while IsOpen(bp) do
+  begin
+    MoveMouseSmooth(x, y);
+    ClickMouse(x, y, True);
+    Wait(400);
+  end;
+end;
+
+function FindItemAt(color, bp, item: Integer; out resultBp, resultItem: Integer): Boolean;
+var
+  bpUnspecified, itemUnspecified, found: Boolean;
+  x, y: Integer;
 begin
   if bp = 0 then
   begin
@@ -388,24 +386,6 @@ begin
   SafeClick(ItemX(item), BpY(bp), False);
 end;
 
-function IsCurrentBpOpen: Boolean;
-begin
-  Result := IsOpen(bp);
-end;
-
-procedure Close(bp: Integer);
-var x, y: Integer;
-begin
-  x := closeBtnX;
-  y := CloseBtnY(bp);
-  while IsOpen(bp) do
-  begin
-    MoveMouseSmooth(x, y);
-    ClickMouse(x, y, True);
-    Wait(500);
-  end;
-end;
-
 function LocateTarget(out x, y: Integer): Boolean;
 var start: Integer;
 begin
@@ -440,40 +420,41 @@ end;
 procedure ClickTile(tx, ty: Integer; left: Boolean);
 var x, y: Integer;
 begin
-  ToScreenLocCenter(tx, ty, x, y);
+  ToScreenLocRnd(tx, ty, x, y);
   SafeClick(x, y, left);
 end;
 
 procedure MoveTile(ftx, fty, ttx, tty: Integer);
 var fx, fy, tx, ty: Integer;
 begin
-  ToScreenLocCenter(ftx, fty, fx, fy);
-  ToScreenLocCenter(ttx, tty, tx, ty);
+  ToScreenLocRnd(ftx, fty, fx, fy);
+  ToScreenLocRnd(ttx, tty, tx, ty);
   Drag(fx, fy, tx, ty);
 end;
 
 procedure MoveTileToSlot(ftx, fty, tbp, titem: Integer);
 var fx, fy, tx, ty: Integer;
 begin
-  ToScreenLocCenter(ftx, fty, fx, fy);
+  ToScreenLocRnd(ftx, fty, fx, fy);
   tx := ItemX(titem);
   ty := BpY(tbp);
   Drag(fx, fy, tx, ty);
 end;
 
 function FindMonster(out tx, ty: Integer): Boolean;
-var points: TPointArray;
-var i, j, _tx, _ty: Integer;
+var
+  points: TPointArray;
+  i, j, _tx, _ty: Integer;
 begin
-  for i := 0 to Length(monsterBmps)-1 do
+  for i := 0 to High(monsterBmps) do
   begin
     if monsterBmps[i] = 0 then
       break;
     if FindBitmapsTolerance(monsterBmps[i], points, SXS, SYS, SXE, SYE, 20) then
     begin
-      for j := 0 to Length(points)-1 do
+      for j := 0 to High(points) do
       begin
-        ToTileLoc(points[j].X + offsetX, points[j].Y + offsetY, _tx, _ty);
+        ToTileLoc(points[j].X + monsterOffset.X, points[j].Y + monsterOffset.Y, _tx, _ty);
         if not IsTooFar(_tx, _ty) then
         begin
           tx := _tx;
@@ -492,15 +473,15 @@ function FindCorpse(out tx, ty: Integer): Boolean;
 var points: TPointArray;
 var i, j, _tx, _ty: Integer;
 begin
-  for i := 0 to Length(corpseBmps)-1 do
+  for i := 0 to High(corpseBmps) do
   begin
     if corpseBmps[i] = 0 then
       break;
     if FindBitmapsTolerance(corpseBmps[i], points, SXS, SYS, SXE, SYE, 20) then
     begin
-      for j := 0 to Length(points)-1 do
+      for j := 0 to High(points) do
       begin
-        ToTileLoc(points[j].X, points[j].Y, _tx, _ty);
+        ToTileLoc(points[j].X + corpseOffset.X, points[j].Y + corpseOffset.Y, _tx, _ty);
         if not IsOnSelf(_tx, _ty) and not IsTooFar(_tx, _ty) then
         begin
           tx := _tx;
@@ -524,6 +505,7 @@ end;
 
 begin
   ActivateClient;
+  Wait(800);
   Load;
 
   if spellFrequency <> 0 then
@@ -562,14 +544,14 @@ begin
           MoveItemToSlot(bp, item, bp2, item2)
         else
           MoveItemToSlot(bp, item, i, 1);
-        Wait(500);
+        Wait(RandomRange(300, 600));
         i := i + 1;
       end;
       i := 0;
       while (i < 5) and FindItemAt(eggColor, lootBp, 0, bp, item) do
       begin
         UseItem(bp, item);
-        Wait(RandomRange(50, 200));
+        Wait(RandomRange(100, 300));
         i := i + 1;
       end;
       Close(lootBp);
