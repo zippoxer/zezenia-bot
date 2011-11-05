@@ -14,6 +14,7 @@ var
   monsterOffset, corpseOffset: TPoint;
   gameScreenDTM, minimizeCloseButtonsBmp, targetCircleBmp: Integer;
   currentPlace, lastPlaceChange: Integer;
+  nextScheduledEat: Integer;
 
   lootBp, foodBp: Integer;
   SXS, SYS, SXE, SYE: Integer;
@@ -22,7 +23,7 @@ var
 
 const
   // What to attack. Choose between creep, swarm, bug and bandit.
-  target = 'creep';
+  target = 'bandit';
 
   // Time to wait for the GUI to response. Must be higher than 1000 / minimum FPS.
   gui = 100;
@@ -36,21 +37,17 @@ const
   // Not tested enough.
   smartTargeting = True;
 
-  // If set to True, eating is enabled and the first backpack will be considered
-  // as a food backpack.
-  eat = False;
-
   // How much bacpacks are opened after the food backpack (if there is) and are
   // used for carrying gold?
   carryBps = 1;
 
-  // Use the first item in the food backpack every...
+  // Use the first item in the food backpack every... If set to 0, eating is disabled.
   eatFrequency = 30000;
 
   // VK_F1, VK_F2, etc.
-  spell = VK_F1;
+  spellHotkey = VK_F1;
 
-  // Press the spell hotkey every...
+  // Press the spell hotkey every... If set to 0, spelling is disabled.
   spellFrequency = 0;
 
   // Enable or disable place changing.
@@ -103,7 +100,7 @@ begin
   firstBpY := y + 41;
   closeBtnX := x + 19;
 
-  if eat then
+  if eatFrequency <> 0 then
     foodBp := 1;
   lootBp := foodBp + carryBps + 1;
 end;
@@ -283,6 +280,11 @@ end;
 function WaitFalse(func: Void; timeout: Integer): Boolean;
 begin
   Result := WaitFunc(func, False, timeout);
+end;
+
+function RandomAround(base: Integer; minDeviation, maxDeviation: Extended): Integer;
+begin
+  Result := RandomRange(Round(minDeviation * base), Round(maxDeviation * base));
 end;
 
 procedure SafeMove(x, y: Integer);
@@ -540,9 +542,19 @@ end;
 
 procedure SpellTimeout;
 begin
-  KeyDown(spell);
-  KeyUp(spell);
-  SetTimeout(spellFrequency, 'SpellTimeout');
+  KeyDown(spellHotkey);
+  Wait(RandomRange(30, 80));
+  KeyUp(spellHotkey);
+  SetTimeout(RandomAround(spellFrequency, 0.8, 1.15), 'SpellTimeout');
+end;
+
+procedure EatIfNeeded;
+begin
+  if (eatFrequency <> 0) and (GetSystemTime - nextScheduledEat >= 0) then
+  begin
+    UseItem(1, 1);
+    nextScheduledEat := GetSystemTime + RandomAround(eatFrequency, 0.8, 1.15);
+  end;
 end;
 
 begin
@@ -551,9 +563,7 @@ begin
   Load;
 
   if spellFrequency <> 0 then
-  begin
     SetTimeout(spellFrequency, 'SpellTimeout');
-  end;
 
   lastPlaceChange := GetSystemTime;
   currentPlace := 1;
@@ -613,5 +623,7 @@ begin
       Wait(placeChangeTime);
       lastPlaceChange := GetSystemTime;
     end;
+
+    EatIfNeeded;
   end;
 end.
