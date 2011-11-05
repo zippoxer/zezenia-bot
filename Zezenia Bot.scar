@@ -21,7 +21,7 @@ var
   firstItemX, firstBpY, closeBtnX: Integer;
 
 const
-  // What to attack. Choose between creep, swarm and bug.
+  // What to attack. Choose between creep, swarm, bug and bandit.
   target = 'creep';
 
   // Time to wait for the GUI to response. Must be higher than 1000 / minimum FPS.
@@ -193,6 +193,42 @@ begin
     '56WOlCNGADktjB+');
 end;
 
+procedure LoadBandit;
+begin
+  monsterOffset.X := 15;
+  monsterOffset.Y := 15;
+
+  // up
+  monsterBmps[0] := BitmapFromString(9, 8, 'beNpjZV09ufzQ8nYgW' +
+    'jO5fEZzVkGCn5+zORAxMDBAxA8v71gzpWJmS1ZnacKi7gJ/F5BUR' +
+    '2k8UBAu3lmWUJjov6i70MZYE2jCwq6CmS3ZQDSrJRso1QWWBSKgR' +
+    'iAXJN4KQot6CrvKEwuT/IGIj48PKGttrAkyp6dwMRhBZHl5eSGyN' +
+    'mBZoPj6aVUQWaAgKysrUAEbGxuQAZMqYgUArKNTZQ==');
+
+  // down
+  monsterBmps[1] := BitmapFromString(8, 8, 'beNpzMFk/vWr/ktb' +
+    '9S9s2zqie35lflRka4+cAJCGCB0DiNQs68yfWplZnhm2eWdtfkwJ' +
+    'RCREEobrUFRPLKjNCl/WXLO8vBYqsmFC6sKtgUl1qjL8DAwMD0DQ' +
+    'guaCrAKgSyJhUl2aur8YABlWZYRCVQMGarDALsDg3NzeQrM4KA4o' +
+    'DSaBiLwcToAgHBwdECigCREDFXgDIUEeq');
+
+  // right
+  monsterBmps[3] := BitmapFromString(8, 8, 'beNpzMFk/vWr/kt' +
+    'b+mpTKjFAGJAAU3L+0beOM6mX9JVWZIClubm4ODg6g4IGlbfM785' +
+    'f3lwIFqzLDIFJAlRtn1CzozJ9Ym7qgq2BhV0F1FkgKqBIiuGJC6c' +
+    'S61ElgZK6vBjQTKAhEQJVAZZPq0oDqgeIxfg7VmWEwlWk1YEEgAg' +
+    'punlW7YmJZrL8DkGuhr+blYOIFANn/R60=');
+
+  // left
+  monsterBmps[2] := BitmapFromString(8, 7, 'beNrj41s9uXx6c+a' +
+    'M5ixrY00GBgZeXl5WVlYgAygCQfkJfkApoCAXFxeQ7CiNB4m3ZC3' +
+    'sKihI8AOK8PPzA6WA4kAEFIQjiBRQTUdpQmdZwqLugrVTK4AIKC4' +
+    'gIADSnuhXkOgPkQIioDgfHx/QLoh4IVgKYi8fABKRNGc=');
+
+  corpseBmps[0] := BitmapFromString(7, 4, 'beNpjZ+VkJ4BkxPghDCE+Tms' +
+    '9eT8bTWRZDwu19iwvCMoJsQIJAgDLtgiG');
+end;
+
 procedure Load;
 begin
   // Use bitmap index 0.
@@ -202,6 +238,7 @@ begin
     'creep': LoadCreep;
     'swarm': LoadSwarm;
     'bug': LoadBug;
+    'bandit': LoadBandit;
   end;
 
   gameScreenDTM := DTMFromString('78DA639CC7C4C0A0CAC8800C444444C0344C9' +
@@ -217,8 +254,8 @@ begin
     'I735YhkEyhYKjWlb2Sg0JMUbJUmRq448rL0786sla4jJP2nH4ZPm' +
     'ZpQimV7q7d5hBwJ/L1izv+5N8teyK4=');
 
-  targetCircleBmp := BitmapFromString(3, 3, 'beNoT52+TFl4iI7xBSnCZEO9' +
-    'qKcEt8iJrpIU3ygivBQBgawdy');
+  targetCircleBmp := BitmapFromString(3, 2, 'beNrj51nNxzVXg' +
+    'GcZP/dCPq5lfNyLASb6BHM=');
 
   LearnGui;
 end;
