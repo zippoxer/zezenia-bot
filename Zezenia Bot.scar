@@ -1,5 +1,5 @@
 {
-  Zezenia Bot 0.2.0
+  Zezenia Bot 0.2.1
   http://forums.scar-divi.com/showthread.php?228-Zezenia-Bot
 }
 
@@ -23,7 +23,7 @@ var
 
 const
   // What to attack. Choose between creep, swarm, bug and bandit.
-  target = 'bandit';
+  target = 'creep';
 
   // Time to wait for the GUI to response. Must be higher than 1000 / minimum FPS.
   gui = 100;
@@ -42,7 +42,7 @@ const
   carryBps = 1;
 
   // Use the first item in the food backpack every... If set to 0, eating is disabled.
-  eatFrequency = 30000;
+  eatFrequency = 0;
 
   // VK_F1, VK_F2, etc.
   spellHotkey = VK_F1;
