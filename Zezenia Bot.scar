@@ -1,5 +1,5 @@
 {
-  Zezenia Bot 0.2.1
+  Zezenia Bot 0.2.2
   http://forums.scar-divi.com/showthread.php?228-Zezenia-Bot
 }
 
@@ -22,7 +22,7 @@ var
   firstItemX, firstBpY, closeBtnX: Integer;
 
 const
-  // What to attack. Choose between creep, swarm, bug and bandit.
+  // What to attack. Choose between creep, swarm, bug, bandit and orknie.
   target = 'creep';
 
   // Time to wait for the GUI to response. Must be higher than 1000 / minimum FPS.
@@ -226,6 +226,50 @@ begin
     '9eT8bTWRZDwu19iwvCMoJsQIJAgDLtgiG');
 end;
 
+procedure LoadOrknie;
+begin
+  monsterOffset.X := 10;
+  monsterOffset.Y := 10;
+
+  // up
+  monsterBmps[0] := BitmapFromString(8, 8, 'beNrLdt/aV31g4cRt/' +
+    'TUToh2BpKGhIQMYAAXvHFlzasPS7WApIAIy1lSnANWc3LAUJD6hB' +
+    'ogOLpoEFFxTkwJUsLo6+RRYCshNdjGHoCurGq6sagQJVqdMjHFck' +
+    'u0OlAUioDlABDQTYsjBRZOBgjsm1AINAaoHKgYLQsXX1qTAxcHqJ' +
+    '19b3QhUvAQAgxln2g==');
+
+  // down
+  monsterBmps[1] := BitmapFromString(8, 7, 'beNpzs9w3tXFTQzo' +
+    'QTYt3TnOznBrvvHdK494pDSdXzABKbW7IAAoaqspCEJC9f1oTUHB' +
+    'avAuQvLR9zYkVM4B6gVKbGzOmgwWBGoFkupsl0EAwctk3rQnMdUl' +
+    'HMurSjjVArrGxMVAcqExYxsjRxghoPtBSoCCQC7bFGagSJA4AX3R' +
+    'Dww==');
+
+  // right
+  monsterBmps[3] := BitmapFromString(12, 8, 'beNpztUh2Md8xo' +
+    'fb0xmWHFk/eMbF2bU3K0hz362uaJsU43j+2LsXFHCgyMcYRKHV48' +
+    'ZSdE+vW1aZOinE6s2k5hA0hgQikF8adFOsEZKS4WBgZGQFJiAKgU' +
+    'UA1EDZQAUjEFaRAWNoQyIUgiGKg+RDGkSVTJoPFoSa4WthbGRqoy' +
+    'IJNswAyzm5esR4sDlQGREAROILYAmQcWTIVqADIAFoEkQIaAkRAQ' +
+    'ZD7J9UBRYCGQLTbWxtCEFAWhACj5HUJ');
+
+  // left
+  monsterBmps[2] := BitmapFromString(9, 8, 'beNo1ijEOgkAUBTm' +
+    'InQcwNNJKMPEQWAGlN9glES6wi56AGCxkSbQBS2K0wVal4i6OISa' +
+    'Tl/fnfZNalhV481qJ2XSi/EUpwjbPQPsuJwmB55BMtZKv0xYobb4' +
+    'j8e8yaZQ0IjQiAvxwr7pzQf9NWpIwPCreusvx+afRsZERfEySrV3' +
+    'Oq47xlYwot8OepONZx07Bj2Bs2x5NuHSKzWr0vUn7LywldkY=');
+
+  corpseBmps[0] := BitmapFromString(5, 7, 'beNpjYIiOjnZ' +
+    '2djYEAwYGKBcI4OJARn5+PlxBQUGBi4sLkG2rIskAA0D2wjgnIFp' +
+    'fHAVEyOxF8U75DroMADR7HEs=');
+
+  corpseBmps[1] := BitmapFromString(6, 7, 'beNrbNJeBgSH' +
+    'CxrAh0Kox0GrNxOb9M4tX9zfNzIs0N9a2MNaelRe5dmLzovo8IBe' +
+    'oDMhe0ljQFARSrKUguaQhH8jWVpBc2lgAlAUyIAjIXTepBWSyrSG' +
+    'QBKoBcg/OLgVqB8oCRZY2gRScBACAcy10');
+end;
+
 procedure Load;
 begin
   // Use bitmap index 0.
@@ -236,6 +280,7 @@ begin
     'swarm': LoadSwarm;
     'bug': LoadBug;
     'bandit': LoadBandit;
+    'orknie': LoadOrknie;
   end;
 
   gameScreenDTM := DTMFromString('78DA639CC7C4C0A0CAC8800C444444C0344C9' +
@@ -412,18 +457,20 @@ begin
   Result := FindItemAt(color, 0, 0, resultBp, resultItem);
 end;
 
-procedure MoveItem(bp, item, x, y: Integer);
+procedure MoveSlot(fromBp, fromItem, toBp, toItem: Integer);
 begin
-  Drag(ItemX(item), BpY(bp), x, y);
+  Drag(ItemX(fromItem), BpY(fromBp), ItemX(toItem), BpY(toBp));
   Wait(gui);
   KeyDown(VK_RETURN);
+  Wait(RandomRange(60, 130));
   KeyUp(VK_RETURN);
 end;
 
-procedure MoveItemToSlot(fromBp, fromItem, toBp, toItem: Integer);
+// TODO
+{procedure MoveSlotToTile(fromBp, fromItem, toBp, toItem: Integer);
 begin
   MoveItem(fromBp, fromItem, ItemX(toItem), BpY(toBp));
-end;
+end;}
 
 procedure UseItem(bp, item: Integer);
 begin
@@ -521,7 +568,7 @@ begin
   begin
     if corpseBmps[i] = 0 then
       break;
-    if FindBitmapsTolerance(corpseBmps[i], points, SXS, SYS, SXE, SYE, 20) then
+    if FindBitmapsTolerance(corpseBmps[i], points, SXS, SYS, SXE, SYE, 30) then
     begin
       for j := 0 to High(points) do
       begin
@@ -593,9 +640,9 @@ begin
       while (i < lootBp) and FindItemAt(goldPieceColor, lootBp, 0, bp, item) do
       begin
         if FindItemAt(goldPieceColor, i, 0, bp2, item2) then
-          MoveItemToSlot(bp, item, bp2, item2)
+          MoveSlot(bp, item, bp2, item2)
         else
-          MoveItemToSlot(bp, item, i, 1);
+          MoveSlot(bp, item, i, 1);
         Wait(RandomRange(300, 600));
         i := i + 1;
       end;
