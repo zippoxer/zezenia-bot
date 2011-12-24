@@ -22,8 +22,8 @@ var
   firstItemX, firstBpY, closeBtnX: Integer;
 
 const
-  // What to attack. Choose between creep, swarm, bug, bandit and orknie.
-  target = 'creep';
+  // What to attack. Choose between creep, swarm, bug, bandit, orknie and dwarf.
+  target = 'dwarf';
 
   // Time to wait for the GUI to response. Must be higher than 1000 / minimum FPS.
   gui = 100;
@@ -270,6 +270,53 @@ begin
     'QBKoBcg/OLgVqB8oCRZY2gRScBACAcy10');
 end;
 
+procedure LoadDwarf;
+begin
+  monsterOffset.X := 10;
+  monsterOffset.Y := 10;
+  corpseOffset.X := -5;
+  corpseOffset.Y := -5;
+
+  // up
+  monsterBmps[0] := BitmapFromString(14, 5, 'beNrT0GBgYCgOtF3ZmAlExYF' +
+    '2i0pjgIxVjZklQXbJriaBltpABpAEKlOVEp6Q5rOyIROopjXObWK' +
+    'aL1AZhA1UCSRVpYWBiiEqgWYuLI0BqgEyICqBJBABFUAMBCpW0tC' +
+    'AqAQaC5RqAZvZikSmuZsCFTvoKtq6OANVJrmatMQCxX2QVQIVQBh' +
+    'QMwFgpEZC');
+
+  // down
+  monsterBmps[1] := BitmapFromString(10, 7, 'beNrTVWJgYAi01C4NsgOSk' +
+    '9J9IQxVaWEGMIAIrm7KgpAQBlwNkAFEYEE/CAnkQsgMbwsIYzISm' +
+    'eJmCtEC1A5kQ+xFE4GodNBVWpzjfHdN3cODmzbXhQLZ4VYqQAUgN' +
+    'VYgqyFSLy/sBZL31tQBFQC1BFlpOwAARwJLvw==');
+
+  // right
+  monsterBmps[3] := BitmapFromString(12, 7, 'beNoLsmNgYAiy0i4Ntpuc' +
+    '4ZfiZuqgq6QqLQwUAYrbubrs3LsPogAoC1QDRED24lzne2vqgMqA' +
+    'UnDFpUF2a5qy1jRnQ1QCFTw6uLk13HxLXSjQ2L3zOoEqAy1B5oAU' +
+    'BNkB0cODm15e2Lu5LhRIAtUD9QKNmpTutxpoTlMWRBlQFqgMqLcl' +
+    '3BzIhjgSKA5UMzkdpABo5uIc57ura8OtVIAqgVygFFANkDEp3Reo' +
+    'AMgGIqAsRNnmWrB75naWAgBuYmHp');
+
+  // left
+  monsterBmps[2] := BitmapFromString(13, 7, 'beNqz0GJgYLDTVvA31yoMs' +
+    'OlL8QaSQJTgYuxvoaUiJRyVGMcABkA1QNlldekQNK84CshtinGFa' +
+    'AGqByuOT3A2bopxgaicD1YDQRCVQDLRxRhiGsQiIAIKQkg4A0ICH' +
+    'QA0FqIR2SiIORC9QNOS3UwgLoe7DYggpkHcBjHKTkcRaBqEi3BbK' +
+    'ggVBdhCSJBKAKEMXog=');
+
+  corpseBmps[0] := BitmapFromString(12, 6, 'beNpjYCAGCItLWTk6rN20' +
+    'ua2rKzw+BigCIYGCQKSgpgZR1t7VtW7TZiACMiBcIBkRHwNkAJVB' +
+    '1ABlgez27u4IsAlwEigOYQOlkK2OiI+F6AUy1m3eAiTxuBMoux6i' +
+    'BgASASvD');
+
+  corpseBmps[1] := BitmapFromString(9, 8, 'beNpLjKuPcl5ckzqnMKI7y' +
+    'QtIAlFDlEu8s5GttgIQAWUboMgFggr8rYGywebKvuaaQC1ANUAuR' +
+    'EtDtEtPstckXl6IIMQQiDiU7QQS9DPXnFMYiRB0NrJ2cgS6AWgIU' +
+    'ApowtyiSCADKKiort7Z2wtkQwwBigNlgVqA4kAEVADUAhRZUpMGl' +
+    'AUiBgYGoHqgeCQA23NEog==');
+end;
+
 procedure Load;
 begin
   // Use bitmap index 0.
@@ -281,6 +328,7 @@ begin
     'bug': LoadBug;
     'bandit': LoadBandit;
     'orknie': LoadOrknie;
+    'dwarf': LoadDwarf;
   end;
 
   gameScreenDTM := DTMFromString('78DA639CC7C4C0A0CAC8800C444444C0344C9' +
